@@ -1,0 +1,23 @@
+{
+  "name": "your-project-name",
+  "version": "1.0.0",
+  "description": "A Vue.js project with Vite and Keycloak integration",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^0.21.1",
+    "keycloak-js": "^16.1.1",
+    "vue": "^3.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^1.9.3",
+    "vite": "^2.4.0",
+    "vue-router": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  }
+}

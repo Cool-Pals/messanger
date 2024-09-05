@@ -1,0 +1,28 @@
+{
+    "realm": "messanger",
+    "enabled": true,
+    "clients": [
+      {
+        "clientId": "messanger",
+        "enabled": true,
+        "protocol": "openid-connect",
+        "redirectUris": ["http://localhost:8080/*"],
+        "webOrigins": ["*"],
+        "publicClient": true,
+        "authorizationServicesEnabled": true
+      }
+    ],
+    "users": [
+      {
+        "username": "testuser",
+        "enabled": true,
+        "credentials": [
+          {
+            "type": "password",
+            "value": "password"
+          }
+        ]
+      }
+    ]
+  }
+  
