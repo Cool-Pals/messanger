@@ -19,23 +19,75 @@ services:
       - 9091:9090
     command:
       - start-dev
-      - "-Dkeycloak.import=/data/messanger_realm.json"
+      # - "-Dkeycloak.import=/data/messanger_realm.json"
     volumes:
       - ./keycloack/data:/opt/keycloak/data
-      - ./keycloack/messanger_realm.json:/data/messanger_realm.json  
+      # - ./keycloack/messanger_realm.json:/data/messanger_realm.json  
     depends_on:
       - keycloakdb
+    networks:
+      - messenger_network
 
   keycloakdb:
     image: postgres:16
     container_name: keycloak_db
     volumes:
-      - /keycloack/postgres_data:/var/lib/postgresql/data
+      - ./keycloack/postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: password
+    networks:
+      - messenger_network
+  
+  traefik:
+    image: traefik:v2.5
+    command:
+      - "--api.insecure=true"          # Enable the Traefik dashboard and API in insecure mode
+      - "--providers.docker=true"      # Enable the Docker provider
+      - "--entrypoints.web.address=:80" # Define an entry point named 'web' that listens on port 80
+      - "--entrypoints.dashboard.address=:8081" # Define an entry point named 'dashboard' that listens on port 8080
+    ports:
+      - "80:80"                        # Map port 80 on the host to port 80 in the container (for the web application)
+      - "8081:8081"                    # Map port 8080 on the host to port 8080 in the container (for the Traefik dashboard)
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro" # Mount the Docker socket to allow Traefik to listen to Docker events
+    labels:
+      - "traefik.http.routers.dashboard.service=api@internal" # Use the internal Traefik API service for the dashboard
+      - "traefik.http.routers.dashboard.entrypoints=dashboard" # Use the 'dashboard' entry point for the Traefik dashboard
+      - "traefik.http.routers.dashboard.rule=Host(`localhost`)" # Ensure that Traefik dashboard is accessible via localhost
+    networks:
+      - messenger_network
 
-volumes:
-  postgres_data:
-  keycloak_data:
+  vue-app:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.dev
+      network: host
+    container_name: vue_app
+    image: vue-app-dev
+    ports:
+      - "5173:5173"  # Map Vite's default port 5173 to localhost
+    volumes:
+      - ./ui:/app  # Bind mount the local `ui` directory to `/app` in the container
+      - /app/node_modules  # Local volume for node_modules to avoid conflicts
+      - /app/dist:/app/dist # Ensure the built output is accessible for serving
+    environment:
+      - VUE_APP_KEYCLOAK_URL=http://keycloak_web:8080/auth
+      - VUE_APP_KEYCLOAK_REALM=cool_app
+      - VUE_APP_KEYCLOAK_CLIENT_ID=cool_app_public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vue-app.rule=PathPrefix(`/msg`)"
+      - "traefik.http.services.vue-app.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.vue-app-strip-prefix.stripprefix.prefixes=/msg"
+      - "traefik.http.middlewares.vue-app-strip-prefix.stripprefix.forceSlash=true"
+      - "traefik.http.routers.vue-app.middlewares=vue-app-strip-prefix"
+      - "traefik.http.middlewares.vue-app-serviceheaders.headers.accesscontrolalloworiginlist=*"
+    networks:
+      - messenger_network
+    
+
+networks:
+  messenger_network:
+    driver: bridge

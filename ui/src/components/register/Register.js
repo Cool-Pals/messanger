@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { keycloak, keycloakConfig }  from '../../keycloak';
 
 export default {
   data() {
@@ -10,15 +11,28 @@ export default {
   methods: {
     async register() {
       try {
-        const response = await axios.post('http://localhost:8080/auth/admin/realms/your-realm/users', {
+        const tokenResponse = await axios.post(`${keycloakConfig.url}/realms/${keycloak.realm}/protocol/openid-connect/token`, new URLSearchParams({
+          grant_type: 'client_credentials',
+          client_id: keycloakConfig.clientId,
+          client_secret: keycloakConfig.clientSecret
+        }), {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
+        });
+
+        const accessToken = tokenResponse.data.access_token;
+
+        const response = await axios.post(`http://localhost:8080/admin/realms/${keycloak.realm}/users`, {
           username: this.email,
           email: this.email,
           enabled: true,
           credentials: [{ type: 'password', value: this.password, temporary: false }]
         }, {
           headers: {
-            'Authorization': `Bearer ${yourAdminToken}`,
-            'Content-Type': 'application/json'
+
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
           }
         });
 
@@ -27,6 +41,9 @@ export default {
       } catch (error) {
         console.error('Registration failed', error);
       }
+    },
+    goToLogin() {
+      this.$router.push({ name: 'Login' });
     }
   }
 };

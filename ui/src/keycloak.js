@@ -1,9 +1,11 @@
 import Keycloak from 'keycloak-js';
 
-const keycloak = new Keycloak({
-  url: 'http://localhost:8080/auth', // URL вашего сервера Keycloak
-  realm: 'your-realm',               // Имя вашего Realm
-  clientId: 'your-client-id'          // Имя вашего клиента
-});
+const keycloakConfig = {
+  url: process.env.VUE_APP_KEYCLOAK_URL,
+  realm: process.env.VUE_APP_KEYCLOAK_REALM,
+  clientId: process.env.VUE_APP_KEYCLOAK_CLIENT_ID,
+};
 
-export default keycloak;
+const keycloak = new Keycloak(keycloakConfig);
+
+export { keycloak, keycloakConfig };

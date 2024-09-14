@@ -1,7 +1,5 @@
 keycloack/data/*
 keycloack/postgres_data/*
-ui/node_modules/*
-ui/.vscode/*
 
 !keycloack/data
 !keycloack/postgres_data
